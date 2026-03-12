@@ -14,8 +14,8 @@ export default function Home() {
   const [search,setSearch] = useState("")
   const [notes,setNotes] = useState<Note[]>([])
   const [dark,setDark] = useState(false)
+  const [sidebar,setSidebar] = useState(true)
 
-  // Load notes
   useEffect(()=>{
     const stored = localStorage.getItem("brainbase_notes")
     if(stored){
@@ -23,7 +23,6 @@ export default function Home() {
     }
   },[])
 
-  // Save notes
   useEffect(()=>{
     localStorage.setItem("brainbase_notes",JSON.stringify(notes))
   },[notes])
@@ -41,6 +40,11 @@ export default function Home() {
     setNotes(updated)
   }
 
+  function loadNote(index:number){
+    setNote(notes[index].text)
+    setTag(notes[index].tag)
+  }
+
   const filteredNotes = notes.filter(n =>
     n.text.toLowerCase().includes(search.toLowerCase()) ||
     n.tag.toLowerCase().includes(search.toLowerCase())
@@ -48,37 +52,54 @@ export default function Home() {
 
   return (
 
-    <div className={dark ? "bg-black text-white min-h-screen flex" : "bg-white text-black min-h-screen flex"}>
+    <div className={dark ? "bg-black text-white min-h-screen flex" : "bg-gray-100 text-black min-h-screen flex"}>
 
       {/* SIDEBAR */}
 
-      <aside className="w-64 border-r p-4 overflow-y-auto">
+      {sidebar && (
 
-        <h2 className="text-xl font-bold mb-4">
-          Notes
-        </h2>
+        <aside className="w-64 border-r p-4 overflow-y-auto">
 
-        {notes.map((n,i)=>(
-          <div
-            key={i}
-            className="mb-3 p-2 border rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
-          >
-            {n.text.substring(0,40)}...
-          </div>
-        ))}
+          <h2 className="text-xl font-bold mb-4">
+            Notes
+          </h2>
 
-      </aside>
+          {notes.map((n,i)=>(
+            <div
+              key={i}
+              onClick={()=>loadNote(i)}
+              className="mb-3 p-3 border rounded cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-700 transition"
+            >
+              {n.text.substring(0,40)}...
+            </div>
+          ))}
 
+        </aside>
+
+      )}
 
       {/* MAIN AREA */}
 
-      <main className="flex-1 p-8 max-w-3xl mx-auto">
+      <main className="flex-1 p-8 max-w-4xl mx-auto">
+
+        {/* TOP BAR */}
 
         <div className="flex justify-between items-center mb-8">
 
-          <h1 className="text-3xl font-bold">
-            BrainBase
-          </h1>
+          <div className="flex gap-2">
+
+            <button
+              onClick={()=>setSidebar(!sidebar)}
+              className="border px-3 py-2 rounded cursor-pointer"
+            >
+              ☰
+            </button>
+
+            <h1 className="text-3xl font-bold">
+              BrainBase
+            </h1>
+
+          </div>
 
           <button
             onClick={()=>setDark(!dark)}
@@ -90,9 +111,9 @@ export default function Home() {
         </div>
 
 
-        {/* INPUT BOX */}
+        {/* NOTE INPUT */}
 
-        <div className="border p-4 rounded mb-6 shadow">
+        <div className="border p-6 rounded-lg mb-6 shadow hover:shadow-lg transition">
 
           <textarea
             className="w-full border p-3 rounded mb-3 bg-transparent"
@@ -114,7 +135,7 @@ export default function Home() {
               onClick={addNote}
               className="bg-blue-600 text-white px-4 py-2 rounded cursor-pointer hover:scale-105 transition"
             >
-              Add
+              Add Note
             </button>
 
           </div>
@@ -140,7 +161,7 @@ export default function Home() {
 
             <div
               key={i}
-              className="border rounded p-4 shadow flex justify-between items-start"
+              className="border rounded-lg p-5 shadow hover:shadow-xl transition flex justify-between"
             >
 
               <div>
