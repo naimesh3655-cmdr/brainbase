@@ -15,4 +15,4 @@ Built with:
 - TypeScript
 - ## Live Demo
 
-https://brainbase-naimesh.vercel.app
+https://brainbase-gamma.vercel.app/
