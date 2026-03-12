@@ -1,244 +1,402 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { Rnd } from "react-rnd"
 
 type Note = {
+  id: string
   text: string
   tag: string
+  done: boolean
+  x: number
+  y: number
+  width: number
+  height: number
+  zIndex: number
+  private: boolean
 }
 
 export default function Home() {
 
-  const [note,setNote] = useState("")
-  const [tag,setTag] = useState("")
-  const [search,setSearch] = useState("")
-  const [notes,setNotes] = useState<Note[]>([])
-  const [dark,setDark] = useState(true)
-  const [sidebar,setSidebar] = useState(false)
+const [notes,setNotes] = useState<Note[]>([])
+const [note,setNote] = useState("")
+const [tag,setTag] = useState("")
+const [dark,setDark] = useState(true)
+const [search,setSearch] = useState("")
+const [openNote,setOpenNote] = useState<string|null>(null)
+const [privateMode,setPrivateMode] = useState(false)
 
-  /* LOAD NOTES */
+const [password,setPassword] = useState("")
+const [inputPassword,setInputPassword] = useState("")
+const [authOpen,setAuthOpen] = useState(false)
+const [firstSetup,setFirstSetup] = useState(false)
 
-  useEffect(()=>{
-    const stored = localStorage.getItem("brainbase_notes")
-    if(stored){
-      setNotes(JSON.parse(stored))
-    }
-  },[])
+/* LOAD */
 
-  /* SAVE NOTES */
+useEffect(()=>{
 
-  useEffect(()=>{
-    localStorage.setItem("brainbase_notes",JSON.stringify(notes))
-  },[notes])
+const storedNotes = localStorage.getItem("brainbase_notes")
+const storedPass = localStorage.getItem("brainbase_password")
 
-  /* LOAD THEME */
+if(storedNotes){
+setNotes(JSON.parse(storedNotes))
+}
 
-  useEffect(()=>{
-    const theme = localStorage.getItem("brainbase_theme")
+if(!storedPass){
+setFirstSetup(true)
+}else{
+setPassword(storedPass)
+}
 
-    if(theme){
-      setDark(theme === "dark")
-    }
-  },[])
+},[])
 
-  /* SAVE THEME */
+/* SAVE */
 
-  useEffect(()=>{
-    localStorage.setItem("brainbase_theme",dark ? "dark" : "light")
-  },[dark])
+useEffect(()=>{
+localStorage.setItem("brainbase_notes",JSON.stringify(notes))
+},[notes])
 
-  function addNote(){
-    if(note.trim()==="") return
+/* ADD NOTE */
 
-    setNotes([...notes,{text:note,tag:tag}])
-    setNote("")
-    setTag("")
-  }
+function addNote(){
 
-  function deleteNote(index:number){
-    const updated = notes.filter((_,i)=>i!==index)
-    setNotes(updated)
-  }
+if(note.trim()==="") return
 
-  function loadNote(index:number){
-    setNote(notes[index].text)
-    setTag(notes[index].tag)
+const maxZ = Math.max(...notes.map(n=>n.zIndex),0)
 
-    setSidebar(false)
-  }
+const newNote:Note={
+id:crypto.randomUUID(),
+text:note,
+tag:tag||"note",
+done:false,
+x:120,
+y:120,
+width:280,
+height:160,
+zIndex:maxZ+1,
+private:privateMode
+}
 
-  const filteredNotes = notes.filter(n =>
-    n.text.toLowerCase().includes(search.toLowerCase()) ||
-    n.tag.toLowerCase().includes(search.toLowerCase())
-  )
+setNotes(prev=>[...prev,newNote])
+setNote("")
+setTag("")
 
-  return (
+}
 
-    <div className={dark 
-      ? "bg-black text-white min-h-screen md:flex"
-      : "bg-gray-100 text-black min-h-screen md:flex"}>
+/* UPDATE */
 
-      {/* SIDEBAR */}
+function updateText(id:string,value:string){
 
-      {sidebar && (
+setNotes(prev =>
+prev.map(n=>n.id===id ? {...n,text:value} : n)
+)
 
-        <>
-          
-          {/* OVERLAY */}
+}
 
-          <div
-            className="fixed inset-0 bg-black/40 md:hidden"
-            onClick={()=>setSidebar(false)}
-          />
+/* DELETE */
 
-          {/* SIDEBAR */}
+function deleteNote(id:string){
 
-          <aside className="fixed md:relative z-30 w-64 h-full bg-gray-200 dark:bg-gray-900 p-4 border-r overflow-y-auto">
+setNotes(prev => prev.filter(n=>n.id!==id))
 
-            <div className="flex justify-between items-center mb-4">
+}
 
-              <h2 className="text-xl font-bold">
-                Notes
-              </h2>
+/* DONE */
 
-              <button
-                onClick={()=>setSidebar(false)}
-                className="md:hidden text-xl"
-              >
-                ✕
-              </button>
+function toggleDone(id:string){
 
-            </div>
+setNotes(prev =>
+prev.map(n=>n.id===id ? {...n,done:!n.done} : n)
+)
 
-            {notes.map((n,i)=>(
-              <div
-                key={i}
-                onClick={()=>loadNote(i)}
-                className="mb-3 p-3 border rounded cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-700 transition"
-              >
-                {n.text.substring(0,40)}...
-              </div>
-            ))}
+}
 
-          </aside>
+/* BRING FRONT */
 
-        </>
+function bringFront(id:string){
 
-      )}
+setNotes(prev=>{
 
-      {/* MAIN */}
+const maxZ=Math.max(...prev.map(n=>n.zIndex),0)
 
-      <main className="flex-1 p-4 md:p-8 max-w-4xl mx-auto">
+return prev.map(n =>
+n.id===id ? {...n,zIndex:maxZ+1} : n
+)
 
-        {/* TOP BAR */}
+})
 
-        <div className="flex justify-between items-center mb-8">
+}
 
-          <div className="flex gap-2 items-center">
+/* SEARCH */
 
-            <button
-              onClick={()=>setSidebar(!sidebar)}
-              className="border px-3 py-2 rounded cursor-pointer"
-            >
-              ☰
-            </button>
+const filtered = notes.filter(n =>
+n.private===privateMode &&
+(
+n.text.toLowerCase().includes(search.toLowerCase()) ||
+n.tag.toLowerCase().includes(search.toLowerCase())
+)
+)
 
-            <h1 className="text-2xl md:text-3xl font-bold">
-              BrainBase
-            </h1>
+const currentNote = notes.find(n=>n.id===openNote)
 
-          </div>
+/* AUTH */
 
-          <button
-            onClick={()=>setDark(!dark)}
-            className="border px-4 py-2 rounded cursor-pointer"
-          >
-            {dark ? "Light Mode" : "Dark Mode"}
-          </button>
+function unlock(){
 
-        </div>
+if(firstSetup){
 
+localStorage.setItem("brainbase_password",inputPassword)
+setPassword(inputPassword)
+setFirstSetup(false)
+setPrivateMode(true)
+setAuthOpen(false)
+setInputPassword("")
+return
 
-        {/* NOTE INPUT */}
+}
 
-        <div className="border p-4 md:p-6 rounded-lg mb-6 shadow hover:shadow-lg transition">
+if(inputPassword===password){
 
-          <textarea
-            className="w-full border p-3 rounded mb-3 bg-transparent"
-            value={note}
-            onChange={(e)=>setNote(e.target.value)}
-            placeholder="Write a note..."
-          />
+setPrivateMode(true)
+setAuthOpen(false)
+setInputPassword("")
 
-          <div className="flex flex-col md:flex-row gap-2">
+}else{
+alert("Wrong password")
+}
 
-            <input
-              className="border p-2 rounded"
-              value={tag}
-              onChange={(e)=>setTag(e.target.value)}
-              placeholder="Tag"
-            />
+}
 
-            <button
-              onClick={addNote}
-              className="bg-blue-600 text-white px-4 py-2 rounded cursor-pointer hover:scale-105 transition"
-            >
-              Add Note
-            </button>
+function lock(){
+setPrivateMode(false)
+}
 
-          </div>
+/* UI */
 
-        </div>
+return(
 
+<div className={`${dark?"bg-black text-white":"bg-gray-100 text-black"} min-h-screen flex flex-col`}>
 
-        {/* SEARCH */}
+{/* HEADER */}
 
-        <input
-          className="border p-3 rounded w-full mb-6 bg-transparent"
-          placeholder="Search notes..."
-          value={search}
-          onChange={(e)=>setSearch(e.target.value)}
-        />
+<div className="flex flex-wrap justify-between items-center gap-2 p-4 border-b border-gray-700">
 
+<h1 className="text-xl font-bold">
+BrainBase
+</h1>
 
-        {/* NOTES */}
+<div className="flex flex-wrap gap-2">
 
-        <div className="grid gap-4">
+<input
+value={search}
+onChange={(e)=>setSearch(e.target.value)}
+placeholder="Search"
+className={`${dark
+? "bg-gray-900 text-white border-gray-700"
+: "bg-white text-black border-gray-300"} border px-3 py-1 rounded`}
+/>
 
-          {filteredNotes.map((n,i)=>(
+<button
+onClick={()=>setDark(!dark)}
+className="border px-3 py-1 rounded"
+>
+{dark?"Light":"Dark"}
+</button>
 
-            <div
-              key={i}
-              className="border rounded-lg p-4 md:p-5 shadow hover:shadow-xl transition flex justify-between"
-            >
+<button
+onClick={()=>{
 
-              <div>
+if(privateMode){
+lock()
+}else{
+setAuthOpen(true)
+}
 
-                <p className="mb-2">
-                  {n.text}
-                </p>
+}}
+className="border px-3 py-1 rounded"
+>
 
-                <span className="text-sm border px-2 py-1 rounded">
-                  #{n.tag}
-                </span>
+{privateMode?"🔒 Private":"🔓 Public"}
 
-              </div>
+</button>
 
-              <button
-                onClick={()=>deleteNote(i)}
-                className="text-red-500 cursor-pointer"
-              >
-                Delete
-              </button>
+</div>
 
-            </div>
+</div>
 
-          ))}
 
-        </div>
+{/* AUTH MODAL */}
 
-      </main>
+{authOpen && (
 
-    </div>
-  )
+<div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+
+<div className="bg-white text-black p-6 rounded w-80">
+
+<h2 className="font-bold mb-3">
+{firstSetup?"Set Password":"Enter Password"}
+</h2>
+
+<input
+type="password"
+value={inputPassword}
+onChange={(e)=>setInputPassword(e.target.value)}
+className="border p-2 w-full mb-3"
+/>
+
+<button
+onClick={unlock}
+className="bg-blue-600 text-white w-full p-2 rounded"
+>
+
+{firstSetup?"Set Password":"Unlock"}
+
+</button>
+
+</div>
+
+</div>
+
+)}
+
+
+{/* NOTE EDITOR */}
+
+{openNote && currentNote ? (
+
+<div className="flex-1 p-4">
+
+<button
+onClick={()=>setOpenNote(null)}
+className="border px-3 py-1 rounded mb-3"
+>
+Close
+</button>
+
+<textarea
+value={currentNote.text}
+onChange={(e)=>updateText(currentNote.id,e.target.value)}
+className={`w-full h-[70vh] border p-4 rounded resize-none ${
+dark
+? "bg-gray-900 text-white border-gray-700"
+: "bg-white text-black border-gray-300"
+}`}
+/>
+</div>
+
+):(
+
+
+/* CANVAS */
+
+<div className="flex-1 relative overflow-hidden">
+
+{filtered.map(n=>(
+
+<Rnd
+key={n.id}
+size={{width:n.width,height:n.height}}
+position={{x:n.x,y:n.y}}
+style={{zIndex:n.zIndex}}
+dragHandleClassName="drag-handle"
+onDragStart={()=>bringFront(n.id)}
+onDragStop={(e,d)=>{
+
+setNotes(prev =>
+prev.map(note =>
+note.id===n.id
+? {...note,x:d.x,y:d.y}
+: note
+)
+)
+
+}}
+onResizeStop={(e,dir,ref,delta,pos)=>{
+
+setNotes(prev =>
+prev.map(note =>
+note.id===n.id
+? {...note,width:ref.offsetWidth,height:ref.offsetHeight,x:pos.x,y:pos.y}
+: note
+)
+)
+
+}}
+onDoubleClick={()=>setOpenNote(n.id)}
+className={`${dark?"bg-gray-900 text-white":"bg-white text-black"} border rounded shadow`}
+>
+
+<div className="drag-handle flex justify-between px-2 py-1 cursor-move">
+
+<span className="text-xs text-blue-400">
+#{n.tag}
+</span>
+
+<div className="flex gap-2">
+
+<button onClick={()=>toggleDone(n.id)}>
+✔
+</button>
+
+<button onClick={()=>deleteNote(n.id)}>
+✕
+</button>
+
+</div>
+
+</div>
+
+<div className={`p-2 text-sm overflow-auto h-full ${n.done?"line-through opacity-50":""}`}>
+{n.text}
+</div>
+
+</Rnd>
+
+))}
+
+</div>
+
+)}
+
+
+{/* INPUT */}
+
+<div className="border-t p-3 md:p-4">
+
+<div className="flex flex-col md:flex-row gap-2 max-w-4xl mx-auto">
+
+<textarea
+value={note}
+onChange={(e)=>setNote(e.target.value)}
+placeholder="Write note"
+rows={2}
+className={`${dark
+? "bg-gray-900 text-white border-gray-700"
+: "bg-white text-black border-gray-300"} flex-1 border p-2 rounded resize-none`}
+/>
+
+<input
+value={tag}
+onChange={(e)=>setTag(e.target.value)}
+placeholder="Tag"
+className={`${dark
+? "bg-gray-900 text-white border-gray-700"
+: "bg-white text-black border-gray-300"} border p-2 rounded md:w-32`}
+/>
+
+<button
+onClick={addNote}
+className="bg-blue-600 text-white px-4 py-2 rounded"
+>
+Add
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+)
+
 }
