@@ -82,23 +82,47 @@ export default function Home() {
 
       {sidebar && (
 
-        <aside className="fixed md:relative z-20 w-64 h-full bg-gray-200 dark:bg-gray-900 p-4 border-r overflow-y-auto">
+        <>
+          
+          {/* OVERLAY */}
 
-          <h2 className="text-xl font-bold mb-4">
-            Notes
-          </h2>
+          <div
+            className="fixed inset-0 bg-black/40 md:hidden"
+            onClick={()=>setSidebar(false)}
+          />
 
-          {notes.map((n,i)=>(
-            <div
-              key={i}
-              onClick={()=>loadNote(i)}
-              className="mb-3 p-3 border rounded cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-700 transition"
-            >
-              {n.text.substring(0,40)}...
+          {/* SIDEBAR */}
+
+          <aside className="fixed md:relative z-30 w-64 h-full bg-gray-200 dark:bg-gray-900 p-4 border-r overflow-y-auto">
+
+            <div className="flex justify-between items-center mb-4">
+
+              <h2 className="text-xl font-bold">
+                Notes
+              </h2>
+
+              <button
+                onClick={()=>setSidebar(false)}
+                className="md:hidden text-xl"
+              >
+                ✕
+              </button>
+
             </div>
-          ))}
 
-        </aside>
+            {notes.map((n,i)=>(
+              <div
+                key={i}
+                onClick={()=>loadNote(i)}
+                className="mb-3 p-3 border rounded cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-700 transition"
+              >
+                {n.text.substring(0,40)}...
+              </div>
+            ))}
+
+          </aside>
+
+        </>
 
       )}
 
