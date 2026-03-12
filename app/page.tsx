@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 type Note = {
   text: string
@@ -13,6 +13,19 @@ export default function Home() {
   const [tag,setTag] = useState("")
   const [search,setSearch] = useState("")
   const [notes,setNotes] = useState<Note[]>([])
+
+  // Load notes from localStorage
+  useEffect(() => {
+    const storedNotes = localStorage.getItem("brainbase_notes")
+    if(storedNotes){
+      setNotes(JSON.parse(storedNotes))
+    }
+  }, [])
+
+  // Save notes to localStorage whenever notes change
+  useEffect(() => {
+    localStorage.setItem("brainbase_notes", JSON.stringify(notes))
+  }, [notes])
 
   function addNote(){
     if(note.trim()==="") return
