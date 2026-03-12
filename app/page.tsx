@@ -14,24 +14,20 @@ export default function Home() {
   const [search,setSearch] = useState("")
   const [notes,setNotes] = useState<Note[]>([])
 
-  // Load notes from localStorage
-  useEffect(() => {
-    const storedNotes = localStorage.getItem("brainbase_notes")
-    if(storedNotes){
-      setNotes(JSON.parse(storedNotes))
+  useEffect(()=>{
+    const stored = localStorage.getItem("brainbase_notes")
+    if(stored){
+      setNotes(JSON.parse(stored))
     }
-  }, [])
+  },[])
 
-  // Save notes to localStorage whenever notes change
-  useEffect(() => {
-    localStorage.setItem("brainbase_notes", JSON.stringify(notes))
-  }, [notes])
+  useEffect(()=>{
+    localStorage.setItem("brainbase_notes",JSON.stringify(notes))
+  },[notes])
 
   function addNote(){
     if(note.trim()==="") return
-
     setNotes([...notes,{text:note,tag:tag}])
-
     setNote("")
     setTag("")
   }
@@ -47,63 +43,90 @@ export default function Home() {
   )
 
   return (
-    <main className="p-10 max-w-2xl mx-auto">
 
-      <h1 className="text-3xl font-bold mb-6">BrainBase</h1>
+    <main className="min-h-screen bg-gray-100 p-10">
 
-      <div className="flex gap-2 mb-4">
+      <div className="max-w-3xl mx-auto">
 
-        <input
-          className="border p-2 flex-1"
-          value={note}
-          onChange={(e)=>setNote(e.target.value)}
-          placeholder="Write a note..."
-        />
+        <h1 className="text-4xl font-bold mb-8 text-center">
+          BrainBase
+        </h1>
 
-        <input
-          className="border p-2 w-32"
-          value={tag}
-          onChange={(e)=>setTag(e.target.value)}
-          placeholder="Tag"
-        />
+        {/* Input Area */}
 
-        <button
-          onClick={addNote}
-          className="bg-blue-500 text-white px-4 py-2"
-        >
-          Add
-        </button>
+        <div className="bg-white p-6 rounded-lg shadow mb-6">
 
-      </div>
+          <textarea
+            className="w-full border p-3 rounded mb-3"
+            value={note}
+            onChange={(e)=>setNote(e.target.value)}
+            placeholder="Write a note..."
+          />
 
-      <input
-        className="border p-2 w-full mb-6"
-        placeholder="Search notes..."
-        value={search}
-        onChange={(e)=>setSearch(e.target.value)}
-      />
+          <div className="flex gap-2">
 
-      <ul>
-
-        {filteredNotes.map((n,i)=>(
-          <li key={i} className="border p-3 mb-2 flex justify-between">
-
-            <div>
-              <p>{n.text}</p>
-              <span className="text-sm text-gray-500">#{n.tag}</span>
-            </div>
+            <input
+              className="border p-2 rounded"
+              value={tag}
+              onChange={(e)=>setTag(e.target.value)}
+              placeholder="Tag"
+            />
 
             <button
-              onClick={()=>deleteNote(i)}
-              className="text-red-500"
+              onClick={addNote}
+              className="bg-blue-600 text-white px-4 py-2 rounded"
             >
-              Delete
+              Add Note
             </button>
 
-          </li>
-        ))}
+          </div>
 
-      </ul>
+        </div>
+
+        {/* Search */}
+
+        <input
+          className="w-full border p-3 rounded mb-6"
+          placeholder="Search notes..."
+          value={search}
+          onChange={(e)=>setSearch(e.target.value)}
+        />
+
+        {/* Notes List */}
+
+        <div className="grid gap-4">
+
+          {filteredNotes.map((n,i)=>(
+
+            <div
+              key={i}
+              className="bg-white p-4 rounded-lg shadow flex justify-between items-start"
+            >
+
+              <div>
+
+                <p className="mb-2">{n.text}</p>
+
+                <span className="text-sm bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                  #{n.tag}
+                </span>
+
+              </div>
+
+              <button
+                onClick={()=>deleteNote(i)}
+                className="text-red-500"
+              >
+                Delete
+              </button>
+
+            </div>
+
+          ))}
+
+        </div>
+
+      </div>
 
     </main>
   )
