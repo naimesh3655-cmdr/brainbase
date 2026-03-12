@@ -2,15 +2,25 @@
 
 import { useState } from "react"
 
+type Note = {
+  text: string
+  tag: string
+}
+
 export default function Home() {
 
   const [note,setNote] = useState("")
-  const [notes,setNotes] = useState<string[]>([])
+  const [tag,setTag] = useState("")
+  const [search,setSearch] = useState("")
+  const [notes,setNotes] = useState<Note[]>([])
 
   function addNote(){
     if(note.trim()==="") return
-    setNotes([...notes,note])
+
+    setNotes([...notes,{text:note,tag:tag}])
+
     setNote("")
+    setTag("")
   }
 
   function deleteNote(index:number){
@@ -18,20 +28,30 @@ export default function Home() {
     setNotes(updated)
   }
 
+  const filteredNotes = notes.filter(n =>
+    n.text.toLowerCase().includes(search.toLowerCase()) ||
+    n.tag.toLowerCase().includes(search.toLowerCase())
+  )
+
   return (
     <main className="p-10 max-w-2xl mx-auto">
 
-      <h1 className="text-3xl font-bold mb-6">
-        BrainBase
-      </h1>
+      <h1 className="text-3xl font-bold mb-6">BrainBase</h1>
 
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-4">
 
         <input
           className="border p-2 flex-1"
           value={note}
           onChange={(e)=>setNote(e.target.value)}
           placeholder="Write a note..."
+        />
+
+        <input
+          className="border p-2 w-32"
+          value={tag}
+          onChange={(e)=>setTag(e.target.value)}
+          placeholder="Tag"
         />
 
         <button
@@ -43,12 +63,22 @@ export default function Home() {
 
       </div>
 
+      <input
+        className="border p-2 w-full mb-6"
+        placeholder="Search notes..."
+        value={search}
+        onChange={(e)=>setSearch(e.target.value)}
+      />
+
       <ul>
 
-        {notes.map((n,i)=>(
+        {filteredNotes.map((n,i)=>(
           <li key={i} className="border p-3 mb-2 flex justify-between">
 
-            <span>{n}</span>
+            <div>
+              <p>{n.text}</p>
+              <span className="text-sm text-gray-500">#{n.tag}</span>
+            </div>
 
             <button
               onClick={()=>deleteNote(i)}
